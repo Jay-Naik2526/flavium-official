@@ -2,8 +2,6 @@ name: Sync to Hugging Face hub
 on:
   push:
     branches: [main]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -14,8 +12,26 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - name: Push to hub
+      
+      - name: Prepare Backend-Only Deployment
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        # NOTICE THE --force FLAG BELOW
-        run: git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/Jaynaik2526/flavium-backend main
+        run: |
+          # 1. Configure Git Identity
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          
+          # 2. Create a temporary branch for deployment
+          git checkout -b backend-deploy
+          
+          # 3. DELETE THE FRONTEND FOLDER (Removes all images/binaries)
+          # Hugging Face doesn't need this, so we remove it to prevent errors.
+          rm -rf client
+          
+          # 4. Commit the "Clean" version
+          git add .
+          git commit -m "Deploy backend only (removed client folder)"
+          
+          # 5. Force Push this clean branch to Hugging Face's 'main' branch
+          # This overwrites whatever is on HF with the clean, text-only backend code.
+          git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/Jaynaik2526/flavium-backend backend-deploy:main
