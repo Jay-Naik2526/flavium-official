@@ -13,25 +13,28 @@ jobs:
           fetch-depth: 0
           lfs: true
       
-      - name: Prepare Backend-Only Deployment
+      - name: Ghost Deploy (No History)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # 1. Configure Git Identity
+          # 1. Config Git
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           
-          # 2. Create a temporary branch for deployment
-          git checkout -b backend-deploy
+          # 2. Create an ORPHAN branch (This creates a new branch with NO history)
+          git checkout --orphan backend-deploy
           
-          # 3. DELETE THE FRONTEND FOLDER (Removes all images/binaries)
-          # Hugging Face doesn't need this, so we remove it to prevent errors.
+          # 3. Unstage everything (Reset the index)
+          git reset
+          
+          # 4. Physically delete the client folder (The source of errors)
           rm -rf client
           
-          # 4. Commit the "Clean" version
+          # 5. Add only the remaining files (Backend + Configs)
           git add .
-          git commit -m "Deploy backend only (removed client folder)"
           
-          # 5. Force Push this clean branch to Hugging Face's 'main' branch
-          # This overwrites whatever is on HF with the clean, text-only backend code.
+          # 6. Create a fresh commit (This commit has NO parent, it is the beginning of time)
+          git commit -m "Ghost deploy: Backend only"
+          
+          # 7. Force Push this single clean commit to Hugging Face
           git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/Jaynaik2526/flavium-backend backend-deploy:main
