@@ -1,0 +1,21 @@
+{
+    "name": "Flavium 2026 Official",
+    "short_name": "Flavium Live",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#09090b",
+    "theme_color": "#fbbf24",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "/images/flavium-logo.png",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "/images/flavium-logo.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ]
+  }

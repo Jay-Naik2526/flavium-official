@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-gold: #fbbf24;
+  --neon-red: #ef4444;
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  @apply bg-zinc-950 text-white overflow-x-hidden;
+  font-family: 'Space Grotesk', sans-serif;
+  cursor: crosshair; /* Adds to the "Command Center" feel */
+}
+
+/* The Broadcast Noise Overlay */
+.tv-noise {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-gold);
+}
+
+/* Text Selection */
+::selection {
+  background: var(--neon-gold);
+  color: black;
+}
+
+/* Utility for 'Teko' font (Headings) */
+.font-teko {
+  font-family: 'Teko', sans-serif;
+}
