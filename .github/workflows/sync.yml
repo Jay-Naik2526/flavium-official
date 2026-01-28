@@ -13,7 +13,7 @@ jobs:
           fetch-depth: 0
           lfs: true
       
-      - name: Ghost Deploy (No History)
+      - name: Ghost Deploy (Flattened Backend)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -21,20 +21,23 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           
-          # 2. Create an ORPHAN branch (This creates a new branch with NO history)
+          # 2. Create Orphan Branch
           git checkout --orphan backend-deploy
-          
-          # 3. Unstage everything (Reset the index)
           git reset
           
-          # 4. Physically delete the client folder (The source of errors)
-          rm -rf client
+          # 3. PREPARE THE FILES (The Critical Fix)
+          # We copy everything from 'server/' to the root directory
+          cp -r server/* .
           
-          # 5. Add only the remaining files (Backend + Configs)
+          # 4. Cleanup
+          # Remove the original 'server' folder and 'client' folder
+          rm -rf server client .github
+          
+          # 5. Add the files (Now Dockerfile is at the root!)
           git add .
           
-          # 6. Create a fresh commit (This commit has NO parent, it is the beginning of time)
-          git commit -m "Ghost deploy: Backend only"
+          # 6. Commit
+          git commit -m "Deploy: Flattened server structure"
           
-          # 7. Force Push this single clean commit to Hugging Face
+          # 7. Force Push
           git push --force https://oauth2:$HF_TOKEN@huggingface.co/spaces/Jaynaik2526/flavium-backend backend-deploy:main
