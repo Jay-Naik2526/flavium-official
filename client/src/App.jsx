@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Lenis from '@studio-freight/lenis';
 import { AnimatePresence } from 'framer-motion';
+import { Analytics } from "@vercel/analytics/react"; // 1. Import Analytics
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -12,13 +13,13 @@ import Results from './pages/Results';
 
 // Components
 import Header from './components/Header';
-import Footer from './components/Footer'; //
 import LoadingScreen from './components/LoadingScreen';
 
 function App() {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize Smooth Scroll (Lenis)
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -37,6 +38,9 @@ function App() {
   return (
     <div className="relative min-h-screen text-white selection:bg-[#fbbf24] selection:text-black font-sans">
       
+      {/* 2. Place the Analytics component here */}
+      <Analytics />
+
       <AnimatePresence mode="wait">
         {isLoading && (
           <LoadingScreen onComplete={() => setIsLoading(false)} />
@@ -51,24 +55,17 @@ function App() {
       {!isLoading && (
         <>
           <Header />
-          
-          {/* Added flex container to push footer to bottom if content is short */}
-          <div className="flex flex-col min-h-screen">
-            <main className="relative z-10 pt-24 px-4 md:px-8 max-w-7xl mx-auto flex-grow w-full">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/rules" element={<Rules />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/results" element={<Results />} />
-                <Route path="/admin-flavium-secret" element={<Admin />} />
-              </Routes>
-            </main>
-            
-            <Footer /> {/* Added Footer integration */}
-          </div>
+          <main className="relative z-10 pt-24 px-4 md:px-8 max-w-7xl mx-auto">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/rules" element={<Rules />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/results" element={<Results />} />
+              <Route path="/admin-flavium-secret" element={<Admin />} />
+            </Routes>
+          </main>
         </>
       )}
-
     </div>
   );
 }
