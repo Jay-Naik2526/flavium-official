@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { RefreshCw, Trash2, Trophy, Plus, Calendar, Medal, Lock, Unlock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { RefreshCw, Trash2, Trophy, Plus, Calendar, Medal, Lock, Unlock, Edit2, X, Check, MapPin, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { API_URL, ADMIN_AUTH_URL } from '../config';
 
@@ -10,6 +10,11 @@ const Admin = () => {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [matches, setMatches] = useState([]);
+  
+  // Edit State
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+
   const [form, setForm] = useState({
     sportName: 'Cricket', category: 'Team', gender: 'Boys', date: 'Jan 24',
     time: '10:00 AM', venue: 'Ground A', 
@@ -45,11 +50,29 @@ const Admin = () => {
     await axios.post(API_URL, form);
     fetchMatches();
     alert("Match Scheduled");
+    // Reset form after publish
+    setForm({
+      ...form,
+      teamA: {name: '', score: 0}, teamB: {name: '', score: 0}
+    });
   };
 
   const handleUpdate = async (id, data) => {
     await axios.patch(`${API_URL}/${id}`, data);
     fetchMatches();
+  };
+
+  // Trigger Edit Mode
+  const startEditing = (match) => {
+    setEditId(match._id);
+    setEditForm({ ...match });
+  };
+
+  // Save the inline edits
+  const saveInlineEdit = async () => {
+    await handleUpdate(editId, editForm);
+    setEditId(null);
+    setEditForm(null);
   };
 
   const handleDelete = async (id) => {
@@ -97,6 +120,7 @@ const Admin = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* LEFT: CREATE FORM */}
         <div className="lg:col-span-1">
           <div className="bg-zinc-900/80 border border-zinc-800 p-6 rounded-2xl sticky top-24">
             <h2 className="font-teko text-3xl text-white uppercase mb-6 flex items-center gap-2"><Plus className="text-[#fbbf24]" size={20} /> Schedule Match</h2>
@@ -118,13 +142,13 @@ const Admin = () => {
                  <input className="input-field" placeholder="Round" value={form.roundName} onChange={e => setForm({...form, roundName: e.target.value})} />
                </div>
                <div className="grid grid-cols-2 gap-3">
-                  <input className="input-field" placeholder="Date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+                  <input className="input-field" placeholder="Date (e.g. Jan 24)" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
                   <input className="input-field" placeholder="Time" value={form.time} onChange={e => setForm({...form, time: e.target.value})} />
                </div>
                <div className="bg-black/30 p-3 rounded border border-zinc-800">
                   <label className="text-[10px] uppercase text-zinc-500 font-bold mb-1 block">Team Names</label>
-                  <input className="input-field mb-2" placeholder="Team A (e.g. SY CS)" value={form.teamA.name} onChange={e => setForm({...form, teamA: {...form.teamA, name: e.target.value}})} />
-                  <input className="input-field" placeholder="Team B (e.g. TY IT)" value={form.teamB.name} onChange={e => setForm({...form, teamB: {...form.teamB, name: e.target.value}})} />
+                  <input className="input-field mb-2" placeholder="Team A" value={form.teamA.name} onChange={e => setForm({...form, teamA: {...form.teamA, name: e.target.value}})} />
+                  <input className="input-field" placeholder="Team B" value={form.teamB.name} onChange={e => setForm({...form, teamB: {...form.teamB, name: e.target.value}})} />
                </div>
                <input className="input-field" placeholder="Venue" value={form.venue} onChange={e => setForm({...form, venue: e.target.value})} />
                <button className="w-full bg-[#fbbf24] py-3 text-black font-black uppercase rounded">Publish</button>
@@ -132,6 +156,7 @@ const Admin = () => {
           </div>
         </div>
 
+        {/* RIGHT: MATCH LIST */}
         <div className="lg:col-span-2 space-y-8">
           {sortedDates.map(date => (
             <div key={date}>
@@ -141,60 +166,123 @@ const Admin = () => {
                 <div className="h-[1px] flex-1 bg-zinc-800" />
               </div>
               <div className="space-y-4">
-                {groupedMatches[date].map(m => (
-                  <div key={m._id} className={`p-4 rounded-xl border ${m.status === 'Live' ? 'bg-zinc-900 border-red-500/30' : 'bg-zinc-900/50 border-zinc-800'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                         <span className="text-[#fbbf24] font-bold text-xs uppercase bg-[#fbbf24]/10 px-2 py-0.5 rounded">{m.sportName}</span>
-                         <span className="text-white font-mono text-xs border border-zinc-700 px-2 rounded bg-black">{m.roundName}</span>
+                {groupedMatches[date].map(m => {
+                  const isEditing = editId === m._id;
+
+                  return (
+                    <div key={m._id} className={`p-4 rounded-xl border transition-all ${m.status === 'Live' ? 'bg-zinc-900 border-red-500/30' : 'bg-zinc-900/50 border-zinc-800'} ${isEditing ? 'ring-2 ring-[#fbbf24]/50' : ''}`}>
+                      
+                      {/* CARD HEADER */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                           {isEditing ? (
+                             <div className="flex gap-2">
+                               <input className="edit-input-small w-24" value={editForm.sportName} onChange={e => setEditForm({...editForm, sportName: e.target.value})} />
+                               <input className="edit-input-small w-24" value={editForm.roundName} onChange={e => setEditForm({...editForm, roundName: e.target.value})} />
+                             </div>
+                           ) : (
+                             <>
+                               <span className="text-[#fbbf24] font-bold text-xs uppercase bg-[#fbbf24]/10 px-2 py-0.5 rounded">{m.sportName}</span>
+                               <span className="text-white font-mono text-xs border border-zinc-700 px-2 rounded bg-black">{m.roundName}</span>
+                             </>
+                           )}
+                        </div>
+                        
+                        <div className="flex gap-3">
+                           {isEditing ? (
+                             <>
+                               <button onClick={saveInlineEdit} className="text-green-500 hover:bg-green-500/10 p-1 rounded transition-colors"><Check size={18}/></button>
+                               <button onClick={() => setEditId(null)} className="text-zinc-500 hover:bg-zinc-500/10 p-1 rounded transition-colors"><X size={18}/></button>
+                             </>
+                           ) : (
+                             <>
+                               <button onClick={() => startEditing(m)} className="text-zinc-600 hover:text-[#fbbf24] transition-colors"><Edit2 size={16}/></button>
+                               <button onClick={() => handleDelete(m._id)} className="text-zinc-600 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
+                             </>
+                           )}
+                        </div>
                       </div>
-                      <button onClick={() => handleDelete(m._id)}><Trash2 size={16} className="text-zinc-600 hover:text-red-500"/></button>
-                    </div>
-                    <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-zinc-800/50">
-                       <div className="flex-1 text-right">
-                          <div className="text-zinc-300 font-bold text-xs truncate mb-1">{m.teamA.name}</div>
-                          <input type="number" className="w-8 md:w-12 bg-zinc-800 text-center text-white rounded p-1 text-sm" value={m.teamA.score} onChange={(e) => handleUpdate(m._id, { teamA: { ...m.teamA, score: e.target.value }})} />
-                       </div>
-                       <span className="font-teko text-lg text-zinc-600">VS</span>
-                       <div className="flex-1 text-left">
-                          <div className="text-zinc-300 font-bold text-xs truncate mb-1">{m.teamB.name}</div>
-                          <input type="number" className="w-8 md:w-12 bg-zinc-800 text-center text-white rounded p-1 text-sm" value={m.teamB.score} onChange={(e) => handleUpdate(m._id, { teamB: { ...m.teamB, score: e.target.value }})} />
-                       </div>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-2 mt-4 pt-3 border-t border-white/5">
-                       <select className={`status-select w-full ${m.status === 'Live' ? 'text-red-500 border-red-500/50' : 'text-zinc-400 border-zinc-700'}`} value={m.status} onChange={(e) => handleUpdate(m._id, { status: e.target.value })}>
-                         <option value="Upcoming">Upcoming</option><option value="Live">Live</option><option value="Finished">Finished</option>
-                       </select>
-                       {m.status === 'Finished' && (
-                         <div className="flex gap-2 w-full">
-                           <div className="flex items-center gap-2 bg-[#fbbf24]/10 px-3 rounded border border-[#fbbf24]/30 flex-1">
-                             <Trophy size={14} className="text-[#fbbf24]"/>
-                             <select className="bg-transparent text-[#fbbf24] text-xs font-bold outline-none w-full" value={m.winner} onChange={(e) => handleUpdate(m._id, { winner: e.target.value })}>
-                               <option value="">Winner</option><option value={m.teamA.name}>A</option><option value={m.teamB.name}>B</option>
-                             </select>
-                           </div>
-                           <div className="flex items-center gap-2 bg-blue-500/10 px-3 rounded border border-blue-500/30 flex-1">
-                             <Medal size={14} className="text-blue-400"/>
-                             <select className="bg-transparent text-blue-400 text-xs font-bold outline-none w-full" value={m.medalRound || 'None'} onChange={(e) => handleUpdate(m._id, { medalRound: e.target.value })}>
-                               <option value="None">Regular</option><option value="Final">Gold/Silver</option>
-                             </select>
-                           </div>
+
+                      {/* MATCHUP CONTENT */}
+                      <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-zinc-800/50 mb-3">
+                         <div className="flex-1 text-right">
+                            {isEditing ? (
+                              <input className="edit-input-team text-right mb-2" value={editForm.teamA.name} onChange={e => setEditForm({...editForm, teamA: {...editForm.teamA, name: e.target.value}})} />
+                            ) : (
+                              <div className="text-zinc-300 font-bold text-xs truncate mb-1">{m.teamA.name}</div>
+                            )}
+                            <input type="number" className="w-8 md:w-12 bg-zinc-800 text-center text-white rounded p-1 text-sm border border-zinc-700 focus:border-[#fbbf24] outline-none" value={m.teamA.score} onChange={(e) => handleUpdate(m._id, { teamA: { ...m.teamA, score: e.target.value }})} />
                          </div>
-                       )}
+                         <span className="font-teko text-lg text-zinc-600 px-2">VS</span>
+                         <div className="flex-1 text-left">
+                            {isEditing ? (
+                              <input className="edit-input-team text-left mb-2" value={editForm.teamB.name} onChange={e => setEditForm({...editForm, teamB: {...editForm.teamB, name: e.target.value}})} />
+                            ) : (
+                              <div className="text-zinc-300 font-bold text-xs truncate mb-1">{m.teamB.name}</div>
+                            )}
+                            <input type="number" className="w-8 md:w-12 bg-zinc-800 text-center text-white rounded p-1 text-sm border border-zinc-700 focus:border-[#fbbf24] outline-none" value={m.teamB.score} onChange={(e) => handleUpdate(m._id, { teamB: { ...m.teamB, score: e.target.value }})} />
+                         </div>
+                      </div>
+
+                      {/* INLINE DETAILS (Editing Venue/Time/Date) */}
+                      {isEditing && (
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                           <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-zinc-800/50">
+                             <Clock size={12} className="text-[#fbbf24]"/>
+                             <input className="bg-transparent text-[10px] text-zinc-300 uppercase outline-none w-full" value={editForm.time} onChange={e => setEditForm({...editForm, time: e.target.value})} />
+                           </div>
+                           <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-zinc-800/50">
+                             <MapPin size={12} className="text-[#fbbf24]"/>
+                             <input className="bg-transparent text-[10px] text-zinc-300 uppercase outline-none w-full" value={editForm.venue} onChange={e => setEditForm({...editForm, venue: e.target.value})} />
+                           </div>
+                        </div>
+                      )}
+
+                      {/* STATUS & CONTROLS */}
+                      <div className="flex flex-col md:flex-row gap-2 mt-2 pt-3 border-t border-white/5">
+                         <select className={`status-select w-full ${m.status === 'Live' ? 'text-red-500 border-red-500/50' : 'text-zinc-400 border-zinc-700'}`} value={m.status} onChange={(e) => handleUpdate(m._id, { status: e.target.value })}>
+                           <option value="Upcoming">Upcoming</option><option value="Live">Live</option><option value="Finished">Finished</option>
+                         </select>
+                         {m.status === 'Finished' && (
+                           <div className="flex gap-2 w-full">
+                             <div className="flex items-center gap-2 bg-[#fbbf24]/10 px-3 rounded border border-[#fbbf24]/30 flex-1">
+                               <Trophy size={14} className="text-[#fbbf24]"/>
+                               <select className="bg-transparent text-[#fbbf24] text-xs font-bold outline-none w-full" value={m.winner} onChange={(e) => handleUpdate(m._id, { winner: e.target.value })}>
+                                 <option value="">Winner</option>
+                                 <option value={m.teamA.name}>{m.teamA.name.slice(0, 10)}..</option>
+                                 <option value={m.teamB.name}>{m.teamB.name.slice(0, 10)}..</option>
+                               </select>
+                             </div>
+                             <div className="flex items-center gap-2 bg-blue-500/10 px-3 rounded border border-blue-500/30 flex-1">
+                               <Medal size={14} className="text-blue-400"/>
+                               <select className="bg-transparent text-blue-400 text-xs font-bold outline-none w-full" value={m.medalRound || 'None'} onChange={(e) => handleUpdate(m._id, { medalRound: e.target.value })}>
+                                 <option value="None">Regular</option><option value="Final">Gold/Silver</option>
+                               </select>
+                             </div>
+                           </div>
+                         )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
       </div>
+
       <style jsx>{`
-        .input-field { width: 100%; background: #000; border: 1px solid #27272a; padding: 0.75rem; color: white; border-radius: 0.5rem; outline: none; }
+        .input-field { width: 100%; background: #000; border: 1px solid #27272a; padding: 0.75rem; color: white; border-radius: 0.5rem; outline: none; transition: border-color 0.2s; }
         .input-field:focus { border-color: #fbbf24; }
+        
+        .edit-input-small { background: #000; border: 1px solid #3f3f46; color: #fbbf24; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; outline: none; }
+        .edit-input-team { background: transparent; border-bottom: 1px solid #3f3f46; color: white; font-size: 11px; font-weight: 700; width: 100%; outline: none; }
+        .edit-input-team:focus { border-color: #fbbf24; }
+        
         .status-select { background: #000; border: 1px solid; padding: 0.5rem; border-radius: 0.5rem; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; outline: none; }
       `}</style>
     </div>
   );
 };
+
 export default Admin;

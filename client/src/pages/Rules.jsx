@@ -30,7 +30,7 @@ const Rules = () => {
       "Squad: 5 on court + subs (Max 12 total).",
       "Duration: 4 quarters of 10 minutes (or 8 mins as per schedule).",
       "Timeouts: Allowed as per FIBA rules.",
-      "Tie-Breaker: Extra time period of 5 minutes."
+      "Tie-Breaker: Extra time period of 2 minutes."
     ],
     "Volleyball": [
       "Squad: 6 playing + 6 substitutes (Max 12).",

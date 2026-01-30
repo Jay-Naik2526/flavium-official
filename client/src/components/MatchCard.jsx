@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Clock, MapPin, Trophy, Medal, Percent } from 'lucide-react';
 import axios from 'axios';
 import { VOTE_URL } from '../config';
+
 const MatchCard = ({ match }) => {
   const isLive = match.status === 'Live';
   const isFinished = match.status === 'Finished';
@@ -24,7 +25,7 @@ const MatchCard = ({ match }) => {
     setVoting(true);
 
     try {
-        await axios.post(VOTE_URL(match._id), { team });
+      await axios.post(VOTE_URL(match._id), { team });
       
       const votedMatches = JSON.parse(localStorage.getItem('votedMatches') || '{}');
       votedMatches[match._id] = true;
@@ -49,7 +50,7 @@ const MatchCard = ({ match }) => {
   return (
     <motion.div
       layout
-      className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl transition-all flex flex-col justify-between min-h-[220px]
+      className={`relative overflow-hidden rounded-2xl border p-4 md:p-5 backdrop-blur-xl transition-all flex flex-col justify-between min-h-[220px]
         ${isLive 
           ? 'border-red-500/50 bg-zinc-900/80 shadow-[0_0_40px_-10px_rgba(239,68,68,0.3)]' 
           : isFinished
@@ -88,15 +89,17 @@ const MatchCard = ({ match }) => {
         )}
       </div>
 
-      {/* TEAMS */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-left w-1/3 truncate">
-          <h3 className={`font-teko text-3xl leading-none tracking-wide truncate ${match.winner === match.teamA.name ? 'text-[#fbbf24]' : 'text-white'}`}>
+      {/* TEAMS - Updated for full visibility on Mobile and PC */}
+      <div className="flex justify-between items-center gap-3 mb-6">
+        {/* Team A */}
+        <div className="text-left flex-1 min-w-0">
+          <h3 className={`font-teko text-2xl md:text-2xl leading-none tracking-wide break-words ${match.winner === match.teamA.name ? 'text-[#fbbf24]' : 'text-white'}`}>
             {match.teamA.name}
           </h3>
         </div>
 
-        <div className="bg-black/50 px-3 py-1 rounded-xl border border-zinc-800 font-teko text-4xl text-white tracking-widest min-w-[80px] text-center">
+        {/* Score/VS Box */}
+        <div className="bg-black/50 px-3 py-1 rounded-xl border border-zinc-800 font-teko text-3xl md:text-3xl text-white tracking-widest shrink-0 text-center flex items-center justify-center">
           {isLive || isFinished ? (
             <div className="flex gap-2 justify-center">
                <span className={match.teamA.score > match.teamB.score ? 'text-[#fbbf24]' : 'text-zinc-400'}>{match.teamA.score}</span>
@@ -104,48 +107,55 @@ const MatchCard = ({ match }) => {
                <span className={match.teamB.score > match.teamA.score ? 'text-[#fbbf24]' : 'text-zinc-400'}>{match.teamB.score}</span>
             </div>
           ) : (
-            <span className="text-zinc-700 text-2xl">VS</span>
+            <span className="text-zinc-700 text-xl md:text-2xl italic px-2">VS</span>
           )}
         </div>
 
-        <div className="text-right w-1/3 truncate">
-          <h3 className={`font-teko text-3xl leading-none tracking-wide truncate ${match.winner === match.teamB.name ? 'text-[#fbbf24]' : 'text-white'}`}>
+        {/* Team B */}
+        <div className="text-right flex-1 min-w-0">
+          <h3 className={`font-teko text-2xl md:text-2xl leading-none tracking-wide break-words ${match.winner === match.teamB.name ? 'text-[#fbbf24]' : 'text-white'}`}>
             {match.teamB.name}
           </h3>
         </div>
       </div>
 
-      {/* --- PREDICTION WIDGET (Only Visible if Upcoming) --- */}
+      {/* --- PREDICTION WIDGET --- */}
       {isUpcoming && (
         <div className="mt-auto pt-4 border-t border-white/5">
           {!hasVoted ? (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button 
                 onClick={() => handleVote('teamA')}
                 disabled={voting}
-                className="flex-1 py-2 bg-zinc-800 hover:bg-[#fbbf24] hover:text-black text-zinc-400 text-[10px] font-bold uppercase rounded transition-colors flex items-center justify-center gap-1 group"
+                className="flex-1 py-2 bg-zinc-800/50 border border-white/5 hover:bg-[#fbbf24] hover:text-black text-zinc-400 text-[10px] font-bold uppercase rounded transition-all flex items-center justify-center gap-1 group px-2"
               >
                  Vote {match.teamA.name}
               </button>
               <button 
                 onClick={() => handleVote('teamB')}
                 disabled={voting}
-                className="flex-1 py-2 bg-zinc-800 hover:bg-[#fbbf24] hover:text-black text-zinc-400 text-[10px] font-bold uppercase rounded transition-colors flex items-center justify-center gap-1 group"
+                className="flex-1 py-2 bg-zinc-800/50 border border-white/5 hover:bg-[#fbbf24] hover:text-black text-zinc-400 text-[10px] font-bold uppercase rounded transition-all flex items-center justify-center gap-1 group px-2"
               >
                  Vote {match.teamB.name}
               </button>
             </div>
           ) : (
-            <div>
-              <div className="flex justify-between text-[10px] font-bold uppercase text-zinc-500 mb-1">
-                <span>{match.teamA.name} {teamAPercent}%</span>
-                <span>{teamBPercent}% {match.teamB.name}</span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-end text-[10px] font-bold uppercase tracking-tight">
+                <div className="flex flex-col text-left max-w-[45%]">
+                  <span className="text-[#fbbf24] text-xs font-black">{teamAPercent}%</span>
+                  <span className="text-zinc-500 break-words">{match.teamA.name}</span>
+                </div>
+                <div className="flex flex-col text-right max-w-[45%]">
+                  <span className="text-zinc-400 text-xs font-black">{teamBPercent}%</span>
+                  <span className="text-zinc-500 break-words">{match.teamB.name}</span>
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden flex border border-white/5">
                 <motion.div 
                   initial={{ width: 0 }} 
                   animate={{ width: `${teamAPercent}%` }} 
-                  className="h-full bg-[#fbbf24]" 
+                  className="h-full bg-gradient-to-r from-[#fbbf24] to-yellow-600" 
                 />
                 <motion.div 
                    initial={{ width: 0 }} 
@@ -158,10 +168,10 @@ const MatchCard = ({ match }) => {
         </div>
       )}
 
-      {/* FOOTER (Venue) - Hidden if Upcoming because Prediction takes space */}
+      {/* FOOTER (Venue) */}
       {!isUpcoming && (
         <div className="pt-3 border-t border-zinc-800/50 text-[10px] text-zinc-500 font-mono uppercase flex items-center gap-2">
-          <MapPin size={12} /> {match.venue}
+          <MapPin size={12} className="text-[#fbbf24]/50" /> {match.venue}
         </div>
       )}
     </motion.div>
